@@ -142,22 +142,48 @@ export function ProjectPage() {
     setSelectedSamples([])
   }, [showPieChart])
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim()) {
-      const userMessage: ChatMessage = { text: inputMessage, isUser: true }
-      setMessages(prevMessages => [...prevMessages, userMessage])
-      setInputMessage('')
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
 
-      // Simulate chatbot response
-      setTimeout(() => {
-        const botResponse: ChatMessage = { 
-          text: randomResponses[Math.floor(Math.random() * randomResponses.length)], 
-          isUser: false 
-        }
-        setMessages(prevMessages => [...prevMessages, botResponse])
-      }, 1000)
+    const userMessage: ChatMessage = { text: inputMessage, isUser: true };
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+
+    const data = getChartData();
+    console.log(data); // For debugging
+
+    try {
+      console.log("HELLO")
+
+      const response = await fetch('http://127.0.0.1:5000/api/chatbot/project', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          data: data,
+          percent: showPieChart,
+          accession: slug,
+          query: inputMessage
+        }), 
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      console.log('Response from API:', responseData);
+      
+      const botMessage: ChatMessage = { text: responseData.response || "Sorry, I couldn't process that request.", isUser: false };
+      setMessages(prevMessages => [...prevMessages, botMessage]);
+    } catch (error) {
+      console.error('Error sending data to API:', error);
+      const errorMessage: ChatMessage = { text: "Sorry, there was an error processing your request.", isUser: false };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
     }
-  }
+
+    setInputMessage('');
+  };
 
   const getChartData = () => {
     const data = (showPieChart ? qualitativeData : dummyData).reduce((acc, item) => {
@@ -314,7 +340,7 @@ export function ProjectPage() {
               <CardTitle className="text-xl font-semibold" style={{ color: nasaBlue }}>Chatbot</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col">
-              <ScrollArea className="flex-grow mb-4 p-4 bg-gray-100 rounded-md h-[400px]">
+              <ScrollArea className="flex-grow mb-4 p-4 bg-gray-100 rounded-md h-[400px]" ref={scrollAreaRef}>
                 {messages.map((msg, index) => (
                   <div key={index} className={`mb-2 ${msg.isUser ? 'text-right' : 'text-left'}`}>
                     <span className={`inline-block p-2 rounded-lg ${msg.isUser ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-800'}`}>

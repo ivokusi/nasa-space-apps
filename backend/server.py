@@ -3,11 +3,11 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 import os
 
-from chatbot import chatbot
+from chatbot import chatbot, chatbot_specific
 from db import DB
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
 
 load_dotenv()
 
@@ -107,6 +107,33 @@ def chatbot_api():
         print(f"Error: {e}")
         return jsonify({'error': 'An error occurred while processing your message.'}), 500
     return jsonify({'response': bot_response}), 200
+
+@app.route('/api/chatbot/project', methods=['POST'])
+def chatbot_project_api():
+    
+    data = request.get_json()
+    print(data)
+    
+    table = data["data"]
+    percent = data["percent"]
+    accession = data["accession"]
+    query = data["query"]
+
+    table_text = ""
+    for row in table:
+        table_text += f"{row["name"]}: {row["value"]}{"%" if percent else ""}\n"
+    
+    table_text.strip()
+    table_text = "<DATA VISUAL>\n" + table_text + "\n</DATA VISUA>"
+
+    try:
+         bot_response = chatbot_specific(query, table_text, accession)
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'An error occurred while processing your message.'}), 500
+    
+    return jsonify({'response': bot_response}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
