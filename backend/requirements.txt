@@ -1,4 +1,17 @@
+unstructured_inference 
+sentence-transformers
+langchain-community 
+langchain_pinecone 
+pinecone-client 
+unstructured
+langchain 
+tiktoken 
+groq 
+     
 firebase-admin
+python-dotenv
 requests
+aiohttp
+asyncio
 pandas
 numpy

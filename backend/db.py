@@ -33,7 +33,6 @@ class DB:
         if doc.exists:
             return doc.to_dict()
         else:
-            print("No such document exists!")
             return None
 
     @staticmethod
@@ -76,8 +75,3 @@ class DB:
         if deleted >= batch_size:
             return DB.delete_collection(collection_name, batch_size)
 
-# Example usage
-if __name__ == "__main__":
-
-    DB.initialize("../firebase_config.json", "spaceapps-b7fd1")
-    print(DB.get_document("Collaborators", "KGsLVtBXOXJoaMs2OeBB"))
