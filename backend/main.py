@@ -36,13 +36,13 @@ def get_json(id: str) -> dict:
         
         return response.json()
 
-def format_factors(data: dict, firebase_document: dict) -> list:
+def format_factors(data: dict, document_data: dict) -> list:
     
     """
     Format the 'factors' section of the data.
     """
     
-    firebase_document["factors"] = []
+    document_data["factors"] = []
     factors = data.get("factors", [])
     
     text = ""
@@ -51,17 +51,17 @@ def format_factors(data: dict, firebase_document: dict) -> list:
         factor_name = get_value(factor, "factorName")
         text += f"{factor_name}\n"
     
-        firebase_document["factors"].append(factor_name)
+        document_data["factors"].append(factor_name)
     
     return text.split()
 
-def format_project(data: dict, firebase_document: dict) -> list:
+def format_project(data: dict, document_data: dict) -> list:
     
     """
     Format the 'project' section of the data.
     """
     
-    firebase_document["project"] = {}
+    document_data["project"] = {}
     
     project_info = {
         "Project Title": get_value(data, "projectTitle"),
@@ -77,17 +77,17 @@ def format_project(data: dict, firebase_document: dict) -> list:
     for key, value in project_info.items():
     
         text += f"{key}: {value}\n"
-        firebase_document["project"][key] = value
+        document_data["project"][key] = value
     
     return text.split()
 
-def format_collaborators(data: dict, firebase_document: dict) -> str:
+def format_collaborators(data: dict, document_data: dict) -> str:
     
     """
     Format the 'collaborators' section of the data.
     """
     
-    firebase_document["collaborators"] = []
+    document_data["collaborators"] = []
     collaborators = data.get("contacts", [])
     
     collaborators_text = ""
@@ -100,7 +100,7 @@ def format_collaborators(data: dict, firebase_document: dict) -> str:
         roles = collaborator.get("roles", [])
         role = roles[0].get("annotationValue") or "N/A" if roles else "N/A"
 
-        firebase_document["collaborators"].append({
+        document_data["collaborators"].append({
             "firstName": first_name,
             "lastName": last_name,
             "email": email,
@@ -125,13 +125,13 @@ def format_collaborators(data: dict, firebase_document: dict) -> str:
 
     return collaborators_text.strip()
 
-def format_payload(data: dict, firebase_document: dict) -> list:
+def format_payload(data: dict, document_data: dict) -> list:
    
     """
     Format the 'payload' section of the data.
     """
    
-    firebase_document["payload"] = {}
+    document_data["payload"] = {}
     payloads = data.get("payloads", [])
    
     if payloads:
@@ -148,17 +148,17 @@ def format_payload(data: dict, firebase_document: dict) -> list:
         for key, value in payload_info.items():
         
             text += f"{key}: {value}\n"        
-            firebase_document["payload"][key] = value
+            document_data["payload"][key] = value
 
         return text.split()
 
-def format_mission(data: dict, firebase_document: dict) -> list:
+def format_mission(data: dict, document_data: dict) -> list:
    
     """
     Format the 'mission' section of the data
     """
    
-    firebase_document["mission"] = {}
+    document_data["mission"] = {}
    
     mission_info = {
         "Name": get_value(data, "missionName"),
@@ -171,17 +171,17 @@ def format_mission(data: dict, firebase_document: dict) -> list:
     for key, value in mission_info.items():
    
         text += f"{key}: {value}\n"
-        firebase_document["mission"][key] = value
+        document_data["mission"][key] = value
    
     return text.split()
 
-def format_protocols(data: dict, firebase_document: dict) -> str:
+def format_protocols(data: dict, document_data: dict) -> str:
     
     """
     Format the 'protocols' section of the data.
     """
     
-    firebase_document["protocols"] = []
+    document_data["protocols"] = []
     protocols = data.get("protocols", [])
     
     protocols_text = ""
@@ -190,7 +190,7 @@ def format_protocols(data: dict, firebase_document: dict) -> str:
         name = get_value(protocol, "name")
         description = get_value(protocol, "description")
 
-        firebase_document["protocols"].append({ 
+        document_data["protocols"].append({ 
             "name": name,
             "description": description 
         })
@@ -204,35 +204,73 @@ def format_protocols(data: dict, firebase_document: dict) -> str:
     
     return protocols_text.strip()
 
-def create_document(data: dict, id: str) -> tuple:
+def get_sample_data(data: dict, accession: str, sample_data: dict):
+    
+    table = data['samples'][0]['table']['table']
+    header = data['samples'][0]['table']['header']
+    
+    sample_name = table.get("Sample Name", "Unknown Sample")
+    col_vals =[h['title'] for h in header]
+    
+    row_data = { col: val for col, val in table.items() if col != "Sample Name" and col in col_vals }
+
+    sample_data[accession] = {
+        sample_name: row_data
+    }
+    
+def get_assay_data(data: dict, accession: str, assay_data: dict):
+    
+    toread_assay = data['assays'][0]['table']['table']
+    header = data['assays'][0]['table']['header']
+    
+    sample_name = toread_assay.get("Sample Name", "Unknown Sample")
+    col_vals =[h['title'] for h in header]
+    
+    row_data = { col: val for col, val in toread_assay.items() if col != "Sample Name" and col in col_vals }
+
+    assay_data[accession] = {
+        sample_name: row_data
+    }
+    
+def create_document(data: dict) -> tuple:
     
     """
     Create the document by populating the BASE_DOCUMENT template with formatted data.
     """
     
-    firebase_document = {}
+    document_data = dict()
+
     title = get_value(data, "title", "Untitled")
-    firebase_document["title"] = title
+    document_data["title"] = title
 
     accession = get_value(data, "accession")
-    firebase_document["accession"] = accession
+    document_data["accession"] = accession
 
     description = get_value(data, "description", "No description available.")
-    firebase_document["description"] = description
+    document_data["description"] = description
 
-    factors = format_factors(data, firebase_document)
+    factors = format_factors(data, document_data)
     organism_links = data.get("organisms", {}).get("links", {})
     organism = next(iter(organism_links.keys()), "N/A")
 
-    project = format_project(data, firebase_document)
-    collaborators = format_collaborators(data, firebase_document)
-    payload = format_payload(data, firebase_document)
-    mission = format_mission(data, firebase_document)
-    protocols = format_protocols(data, firebase_document)
+    project = format_project(data, document_data)
+    collaborators = format_collaborators(data, document_data)
+    payload = format_payload(data, document_data)
+    mission = format_mission(data, document_data)
+    protocols = format_protocols(data, document_data)
 
-    DB.add_document("Project", firebase_document, id)
+    DB.add_document("Project", document_data, accession)
 
-    metadata = {"project_title": title}
+    sample_data = dict()
+    assay_data = dict()
+
+    get_sample_data(data, accession, sample_data)
+    get_assay_data(data, accession, assay_data)
+
+    DB.add_document("Sample", sample_data, accession)
+    DB.add_document("Assay", assay_data, accession)
+
+    metadata = { "project_title": title }
 
     document = BASE_DOCUMENT.format(
         accession=accession,
@@ -251,12 +289,12 @@ def create_document(data: dict, id: str) -> tuple:
 
     return metadata, pretty_document
 
-def add(id: str):
+def add(accession: str):
     
-    data = get_json(id)
+    data = get_json(accession)
 
     PineconeVectorStore(index_name=INDEX_NAME, embedding=EMBEDDINGS)
-    metadata, page_content = create_document(data, id)
+    metadata, page_content = create_document(data)
 
     document = Document(
         page_content=page_content,
@@ -269,15 +307,15 @@ def add(id: str):
         index_name=INDEX_NAME
     )
 
-def search(id: str):
+def search(accession: str):
 
-    document = DB.get_document("Project", id)
+    document = DB.get_document("Project", accession)
    
     if document is None:
    
-        add(id)
+        add(accession)
 
-        return DB.get_document("Project", id)
+        return DB.get_document("Project", accession)
    
     else: 
         
@@ -289,8 +327,8 @@ def get_huggingface_embeddings(text, model_name="sentence-transformers/all-MiniL
 
 def chatbot(query):
 
-    pc = Pinecone(api_key=PINECONE_API_KEY)
-    pc_index = pc.Index(INDEX_NAME)
+    pinecone = Pinecone(api_key=PINECONE_API_KEY)
+    pc_index = pinecone.Index(INDEX_NAME)
 
     raw_query_embedding = get_huggingface_embeddings(query)
 
@@ -325,10 +363,10 @@ def chatbot(query):
 
 if __name__ == "__main__":
     
-    ids = ["OSD-665", "OSD-379"]
+    accessions = ["OSD-665", "OSD-379"]
     
-    for id in ids:
-        search(id)
+    for accession in accessions:
+        search(accession)
     
     # response = chatbot("Using direct reports, can you give me some intresting results found from experiments on mice.")
 

@@ -15,3 +15,5 @@ aiohttp
 asyncio
 pandas
 numpy
+dash
+plotly
