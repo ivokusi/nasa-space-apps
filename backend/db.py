@@ -75,3 +75,13 @@ class DB:
         if deleted >= batch_size:
             return DB.delete_collection(collection_name, batch_size)
 
+    @staticmethod
+    def get_all_documents(collection_name):
+        """Retrieve all documents from a collection."""
+        collection_ref = DB._db.collection(collection_name)
+        docs = collection_ref.stream()
+        all_documents = []
+        for doc in docs:
+            document = doc.to_dict()
+            all_documents.append(document)
+        return all_documents

@@ -11,6 +11,7 @@ import { Switch } from "@/components/ProjectPage/ui/switch"
 import { Label } from "@/components/ProjectPage/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ProjectPage/ui/dialog"
 import { Badge } from "@/components/ProjectPage/ui/badge"
+import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic'
 
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
@@ -100,6 +101,7 @@ const numericalColumns = ['Y', 'U', 'I', 'O', 'J']
 const qualitativeColumns = ['R', 'V', 'D', 'S']
 
 export function ProjectPage() {
+  const { slug } = useParams();
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -111,7 +113,7 @@ export function ProjectPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/Project/OSD-379');
+        const response = await fetch(`http://127.0.0.1:5000/api/Project/${slug}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -382,7 +384,7 @@ export function ProjectPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <h4 className="text-sm font-semibold mb-1" style={{ color: nasaBlue }}>Identifier</h4>
-                      <p className="text-sm text-muted-foreground">{data.mission.identifier}</p>
+                      <p className="text-sm text-muted-foreground">{data.mission.name}</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-1" style={{ color: nasaBlue }}>Start Date</h4>

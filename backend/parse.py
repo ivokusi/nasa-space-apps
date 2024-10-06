@@ -4,7 +4,6 @@ from db import DB
 import xml.dom.minidom
 import requests
 
-from sentence_transformers import SentenceTransformer
 from langchain_pinecone import PineconeVectorStore
 from langchain.schema import Document
 from pinecone import Pinecone
@@ -300,7 +299,10 @@ def create_document(data: dict) -> tuple:
     DB.add_document("Sample", sample_data, accession)
     DB.add_document("Assay", assay_data, accession)
 
-    metadata = { "project_title": title }
+    metadata = { 
+        "project_title": title,
+        "accession": accession
+    }
 
     document = BASE_DOCUMENT.format(
         accession=accession,
@@ -351,49 +353,9 @@ def search(accession: str):
         
         return document
 
-def get_huggingface_embeddings(text, model_name="sentence-transformers/all-MiniLM-L6-v2"):
-    model = SentenceTransformer(model_name)
-    return model.encode(text)
-
-def chatbot(query):
-
-    pinecone = Pinecone(api_key=PINECONE_API_KEY)
-    pc_index = pinecone.Index(INDEX_NAME)
-
-    raw_query_embedding = get_huggingface_embeddings(query)
-
-    top_matches = pc_index.query(vector=raw_query_embedding.tolist(), top_k=4, include_metadata=True)
-    contexts = [item['metadata']['text'] for item in top_matches['matches']]
-
-    augmented_query = "\n" + "\n\n-------\n\n".join(contexts[:10]) + "\n-------\n\n\n\n\nMY QUESTION:\n" + query
-
-    system_prompt = f"""
-    You are a science expert. More specifically, your concentration includes science experiments on space. 
-
-    I am a scientists myself as well. However, I don't have expertise in experiments run on an outer space setting. 
-
-    I want you to answer as if you were having a conversation with me, a scientist. 
-
-    Always consider all of the context provided when forming your response. 
-    """
-
-    groq_client = Groq(api_key=GROQ_API_KEY)
-
-    llm_response = groq_client.chat.completions.create(
-        model="llama-3.1-70b-versatile",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": augmented_query}
-        ]
-    )
-
-    response = llm_response.choices[0].message.content
-    
-    return response
-
 if __name__ == "__main__":
     
-    accessions = ["OSD-665", "OSD-379"]
+    accessions = ["OSD-665", "OSD-379", "OSD-702", "OSD-678", "OSD-718", "OSD-742", "OSD-516"]
     
     for accession in accessions:
         search(accession)
