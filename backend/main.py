@@ -139,9 +139,9 @@ def format_payload(data: dict, document_data: dict) -> list:
         payload = payloads[0]
         
         payload_info = {
-            "Identifier": get_value(payload, 'identifier'),
-            "Name": get_value(payload, 'payloadName'),
-            "Description": get_value(payload, 'description'),
+            "identifier": get_value(payload, 'identifier'),
+            "name": get_value(payload, 'payloadName'),
+            "description": get_value(payload, 'description'),
         }
         
         text = ""
@@ -161,9 +161,9 @@ def format_mission(data: dict, document_data: dict) -> list:
     document_data["mission"] = {}
    
     mission_info = {
-        "Name": get_value(data, "missionName"),
-        "Start": get_value(data, "missionStart"),
-        "End": get_value(data, "missionEnd"),
+        "name": get_value(data, "missionName"),
+        "start": get_value(data, "missionStart"),
+        "end": get_value(data, "missionEnd"),
     }
    
     text = ""
@@ -206,31 +206,59 @@ def format_protocols(data: dict, document_data: dict) -> str:
 
 def get_sample_data(data: dict, accession: str, sample_data: dict):
     
-    table = data['samples'][0]['table']['table']
-    header = data['samples'][0]['table']['header']
+    table = data["samples"]["table"]
+    header = data["samples"]["header"]
     
-    sample_name = table.get("Sample Name", "Unknown Sample")
-    col_vals =[h['title'] for h in header]
-    
-    row_data = { col: val for col, val in table.items() if col != "Sample Name" and col in col_vals }
+    columns = [h["field"] for h in header]
 
-    sample_data[accession] = {
-        sample_name: row_data
-    }
+    rows = list()
+    
+    row_data = dict()
+    for row in table:
+
+        for col, val in row.items():
+        
+            if col in columns:
+            
+                if col != columns[1]:
+            
+                    row_data[col] = val
+            
+                else:
+            
+                    sample_name = val
+        
+        rows.append({sample_name: row_data})
+                    
+    sample_data[accession] = rows
     
 def get_assay_data(data: dict, accession: str, assay_data: dict):
     
-    toread_assay = data['assays'][0]['table']['table']
+    table = data['assays'][0]['table']['table']
     header = data['assays'][0]['table']['header']
     
-    sample_name = toread_assay.get("Sample Name", "Unknown Sample")
-    col_vals =[h['title'] for h in header]
-    
-    row_data = { col: val for col, val in toread_assay.items() if col != "Sample Name" and col in col_vals }
+    columns = [h["field"] for h in header]
 
-    assay_data[accession] = {
-        sample_name: row_data
-    }
+    rows = list()
+    
+    row_data = dict()
+    for row in table:
+
+        for col, val in row.items():
+        
+            if col in columns:
+            
+                if col != columns[0]:
+            
+                    row_data[col] = val
+            
+                else:
+            
+                    sample_name = val
+        
+        rows.append({sample_name: row_data})
+                    
+    assay_data[accession] = rows
     
 def create_document(data: dict) -> tuple:
     
@@ -250,8 +278,10 @@ def create_document(data: dict) -> tuple:
     document_data["description"] = description
 
     factors = format_factors(data, document_data)
+    
     organism_links = data.get("organisms", {}).get("links", {})
     organism = next(iter(organism_links.keys()), "N/A")
+    document_data["organism"] = organism
 
     project = format_project(data, document_data)
     collaborators = format_collaborators(data, document_data)
