@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ProjectPage/ui/card"
+import { Input } from "@/components/ProjectPage/ui/input"
+import { Button } from "@/components/ProjectPage/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ProjectPage/ui/table"
+import { ScrollArea } from "@/components/ProjectPage/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ProjectPage/ui/select"
+import { Switch } from "@/components/ProjectPage/ui/switch"
+import { Label } from "@/components/ProjectPage/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ProjectPage/ui/dialog"
+import { Badge } from "@/components/ProjectPage/ui/badge"
 import dynamic from 'next/dynamic'
 
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
@@ -47,7 +47,7 @@ const ExpandableSection: React.FC<SectionProps> = ({ title, content }) => {
       <h3 className="text-lg font-semibold mb-2" style={{ color: nasaBlue }}>{title}</h3>
       <div 
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-[1000px]' : 'max-h-0'
+          isExpanded ? 'max-h-[1500px]' : 'max-h-0'
         }`}
       >
         {typeof content === 'string' ? (
@@ -59,51 +59,6 @@ const ExpandableSection: React.FC<SectionProps> = ({ title, content }) => {
     </div>
   )
 }
-
-const contactInfo = [
-  { firstName: "John", lastName: "Doe", email: "john.doe@nasa.gov", affiliation: "NASA JPL", role: "Project Manager" },
-  { firstName: "Jane", lastName: "Smith", email: "jane.smith@nasa.gov", affiliation: "NASA Ames", role: "Lead Scientist" },
-  { firstName: "Mike", lastName: "Johnson", email: "mike.johnson@nasa.gov", affiliation: "NASA Glenn", role: "Systems Engineer" },
-]
-
-const protocols = [
-  { name: "Data Collection Protocol", description: "Standardized procedures for gathering and recording mission data to ensure consistency and accuracy across all instruments and observations." },
-  { name: "Transmission Security Protocol", description: "Encryption and verification methods to secure data transmission between the spacecraft and Earth, protecting sensitive information from interception or corruption." },
-  { name: "Planetary Protection Protocol", description: "Guidelines to prevent contamination of celestial bodies with Earth-based microorganisms, preserving the integrity of potential extraterrestrial environments for scientific study." },
-  { name: "Emergency Response Protocol", description: "Predefined procedures for handling unexpected events or malfunctions, ensuring rapid and effective responses to maintain mission safety and continuity." },
-  { name: "Sample Collection Protocol", description: "Detailed procedures for collecting, storing, and preserving samples from celestial bodies, ensuring their scientific integrity during the return journey to Earth." },
-  { name: "Communication Protocol", description: "Standardized methods for maintaining clear and efficient communication between the spacecraft and mission control, including procedures for handling communication delays." },
-]
-
-const payload = {
-  identifier: "MPSE-2023",
-  name: "Multi-Purpose Space Explorer",
-  description: "Advanced spacecraft equipped with a suite of scientific instruments designed for deep space exploration, including high-resolution cameras, spectrometers, and particle detectors."
-}
-
-const mission = {
-  identifier: "DSE-001",
-  start: "2025-07-15",
-  end: "2035-12-31"
-}
-
-const project = {
-  projectType: "Space Exploration",
-  flightProgram: "Deep Space Initiative",
-  experimentPlatform: "Orbital and Planetary",
-  sponsoringAgency: "NASA",
-  nasaCenter: "Jet Propulsion Laboratory",
-  fundingSource: "N/A"
-}
-
-const factors = [
-  "Solar radiation",
-  "Gravitational forces from large planets",
-  "Long-distance communication challenges",
-  "Extreme temperature variations",
-  "Micrometeoroid impacts",
-  "Cosmic radiation exposure"
-]
 
 const randomResponses = [
   "Fascinating question! Let me process that for a moment.",
@@ -144,13 +99,35 @@ const qualitativeData: Sample[] = Array.from({ length: 100 }, (_, i) => ({
 const numericalColumns = ['Y', 'U', 'I', 'O', 'J']
 const qualitativeColumns = ['R', 'V', 'D', 'S']
 
-export function NasaDataDisplay() {
+export function ProjectPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [selectedColumn, setSelectedColumn] = useState<string>(numericalColumns[0])
   const [showPieChart, setShowPieChart] = useState(false)
   const [selectedSamples, setSelectedSamples] = useState<Sample[]>([])
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/api/Project/OSD-379');
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+        setData(data);
+      } catch (error) {
+        console.error('Error fetching project data:', error);
+      }
+    }
+
+    fetchData();
+
+  }, []);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -250,18 +227,22 @@ export function NasaDataDisplay() {
     }
   }
 
+  if (data == null) {
+    return <p>Loading...</p>
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="grid gap-6">
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-2xl font-bold" style={{ color: nasaBlue }}>
-              NASA Mission Data
+              {data.title}
             </CardTitle>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2">
-              <p className="text-sm text-muted-foreground">Accession Number: NASA-2023-001</p>
+              <p className="text-sm text-muted-foreground">Accession Number: {data.accession}</p>
               <Badge variant="secondary" className="mt-2 sm:mt-0">
-                Organism: Homo sapiens
+                Organism: {data.organism}
               </Badge>
             </div>
           </CardHeader>
@@ -358,14 +339,14 @@ export function NasaDataDisplay() {
           <CardContent className="pt-6">
             <ExpandableSection 
               title="Description" 
-              content="This NASA mission aims to explore the outer reaches of our solar system, gathering crucial data about the composition and behavior of distant celestial bodies. The mission utilizes cutting-edge technology and a multidisciplinary approach to push the boundaries of our understanding of space."
+              content={data.description}
             />
             <ExpandableSection 
               title="Factors" 
               content={
                 <div className="bg-gray-50 p-4 rounded-md">
                   <div className="grid grid-cols-2 gap-4">
-                    {factors.map((factor, index) => (
+                    {data.factors.map((factor, index) => (
                       <div key={index} className="flex items-start">
                         <div className="w-2 h-2 rounded-full mt-2 mr-2 flex-shrink-0" style={{ backgroundColor: nasaBlue }}></div>
                         <span className="text-sm text-muted-foreground">{factor}</span>
@@ -380,7 +361,7 @@ export function NasaDataDisplay() {
               content={
                 <div className="bg-gray-50 p-4 rounded-md">
                   <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(project).map(([key, value]) => (
+                    {Object.entries(data.project).map(([key, value]) => (
                       value !== "N/A" && (
                         <div key={key}>
                           <h4 className="text-sm font-semibold mb-1 capitalize" style={{ color: nasaBlue }}>
@@ -401,15 +382,15 @@ export function NasaDataDisplay() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <h4 className="text-sm font-semibold mb-1" style={{ color: nasaBlue }}>Identifier</h4>
-                      <p className="text-sm text-muted-foreground">{mission.identifier}</p>
+                      <p className="text-sm text-muted-foreground">{data.mission.identifier}</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-1" style={{ color: nasaBlue }}>Start Date</h4>
-                      <p className="text-sm text-muted-foreground">{mission.start}</p>
+                      <p className="text-sm text-muted-foreground">{data.mission.start}</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-1" style={{ color: nasaBlue }}>End Date</h4>
-                      <p className="text-sm text-muted-foreground">{mission.end}</p>
+                      <p className="text-sm text-muted-foreground">{data.mission.end}</p>
                     </div>
                   </div>
                 </div>
@@ -420,10 +401,10 @@ export function NasaDataDisplay() {
               content={
                 <div className="bg-gray-50 p-4 rounded-md">
                   <div className="flex items-center mb-2">
-                    <span className="text-sm font-medium text-muted-foreground mr-2">{payload.identifier}</span>
-                    <h4 className="font-semibold" style={{ color: nasaBlue }}>{payload.name}</h4>
+                    <span className="text-sm font-medium text-muted-foreground mr-2">{data.payload.identifier}</span>
+                    <h4 className="font-semibold" style={{ color: nasaBlue }}>{data.payload.name}</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground">{payload.description}</p>
+                  <p className="text-sm text-muted-foreground">{data.payload.description}</p>
                 </div>
               }
             />
@@ -431,7 +412,7 @@ export function NasaDataDisplay() {
               title="Protocols" 
               content={
                 <div>
-                  {protocols.map((protocol, index) => (
+                  {data.protocols.map((protocol, index) => (
                     <div 
                       key={index} 
                       className="bg-gray-50 p-4 rounded-md mb-4 transition-colors duration-200 ease-in-out hover:bg-gray-100"
@@ -456,7 +437,7 @@ export function NasaDataDisplay() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {contactInfo.map((contact, index) => (
+                    {data.collaborators.map((contact, index) => (
                       <TableRow key={index}>
                         <TableCell>{`${contact.firstName} ${contact.lastName}`}</TableCell>
                         <TableCell>{contact.email}</TableCell>

@@ -1,7 +1,7 @@
-import { NasaDataDisplay } from "@/components/nasa-data-display";
+import { HomePage } from "@/components/HomePage/HomePage";
 
 export default function Home() {
   return (
-    <NasaDataDisplay />
+    <HomePage />
   );
 }
